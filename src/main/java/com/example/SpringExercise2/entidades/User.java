@@ -1,25 +1,34 @@
-package com.example.SpringExercise2.modelos;
+package com.example.SpringExercise2.entidades;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+@Document(collection = "ProyectoIntegrador")
 public class User {
     //Atributos de los usuarios
-    private long id;
+    @Id
+    private String id;
     private String nombre;
     private String email;
 
     //Constructor de la clase con parámetros
-    public User(long id, String nombre, String email) {
+    public User(String id, String nombre, String email) {
         this.id = id;
         this.nombre = nombre;
         this.email = email;
     }
 
+    public User() {
+
+    }
+
     //*****************************************************************************
     //Getters y Setters
-    public long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

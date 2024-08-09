@@ -1,59 +1,69 @@
 package com.example.SpringExercise2.controladores;
 
-import com.example.SpringExercise2.entidades.User;
-import com.example.SpringExercise2.servicios.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import com.example.SpringExercise2.data.usuarios.RoleEnum;
+import com.example.SpringExercise2.data.usuarios.UserEntity;
+import com.example.SpringExercise2.data.usuarios.UserService;
+import com.example.SpringExercise2.excepciones.UserWithEmailAlreadyRegisteredException;
+import jakarta.annotation.security.RolesAllowed;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
+
+import java.util.Optional;
+
+import static com.example.SpringExercise2.utils.Constants.ADMIN_ROLE;
 
 @RestController
-//Ruta en común para todos los métodos
-@RequestMapping("/users")
+@RequestMapping("/usuarios")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
+    private final PasswordEncoder passwordEncoder;
 
-    //Método para crear usuarios con Post
-    @PostMapping
-    public ResponseEntity<User> crearUsuario(@RequestBody User user){
-        User usuarioCreado = userService.crearUsuario(user);
-        return new ResponseEntity<>(usuarioCreado, HttpStatus.CREATED);
+    public UserController(UserService userService, PasswordEncoder passwordEncoder) {
+        this.userService = userService;
+        this.passwordEncoder = passwordEncoder;
+        loadSampleUsers();
     }
 
-    //Método para actualizar usuarios con Put
-    @PutMapping("/{id}")
-    public ResponseEntity<User> actualizarUsuarios(@PathVariable String id, @RequestBody User user){
-        User usuarioActualizado = userService.actualizarUsuario(id, user);
-        return usuarioActualizado != null ? ResponseEntity.ok(usuarioActualizado) : ResponseEntity.notFound().build();
+    public void loadSampleUsers() {
+        if (passwordEncoder != null) {
+            UserEntity userEntity = new UserEntity("Paola", "paolita@email.com", passwordEncoder.encode("123"));
+            userService.crearUsuario(userEntity);
+            UserEntity adminUserEntity = new UserEntity("Angel", "angelito@email.com", passwordEncoder.encode("321"));
+            adminUserEntity.addRole(RoleEnum.ADMIN);
+            userService.crearUsuario(adminUserEntity);
+        }
     }
 
-    //Método para eliminar usuarios con Delete
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> eliminarUsuario(@PathVariable String id) {
-        userService.eliminarUsuario(id);
-        String message = "Usuario eliminado correctamente";
-        return ResponseEntity.ok(message);
-    }
-
-    //Método para buscar usuarios por id con Get
     @GetMapping("/{id}")
-    public ResponseEntity<User> buscarUsuarioPorId(@PathVariable String id) {
-        User user = userService.buscarUsuarioPorId(id);
-        if (user != null){
-            return ResponseEntity.ok(user);
-        }
-        else {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<UserEntity> getUserById(@PathVariable String id) {
+        Optional<UserEntity> user = userService.buscarPorId(id);
+        return user.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    //Método para mostrar a todos los usuarios con Get
-    @GetMapping
-    public ResponseEntity<List<User>> mostrarUsuarios() {
-        List<User> usuarios = userService.mostrarUsuarios();
-        return ResponseEntity.ok(usuarios);
+    @PostMapping
+    public ResponseEntity<UserEntity> createUser(@RequestBody UserDto userDto) {
+        if (userService.buscarPorCorreo(userDto.getEmail()).isPresent()) {
+            throw new UserWithEmailAlreadyRegisteredException("Ese correo electrónico ya está en uso");
+        }
+
+        UserEntity userEntity = new UserEntity(userDto.getNombre(), userDto.getEmail(), passwordEncoder.encode(userDto.getContraseña()));
+        UserEntity savedUser = userService.crearUsuario(userEntity);
+
+        return ResponseEntity.ok(savedUser);
+    }
+
+    @RolesAllowed(ADMIN_ROLE)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Boolean> deleteUser(@PathVariable String id) {
+        Optional<UserEntity> user = userService.buscarPorId(id);
+        if (user.isPresent()) {
+            userService.eliminarUsuario(user.get());
+            return ResponseEntity.ok(true);
+        }
+        return ResponseEntity.ok(false);
     }
 }
+

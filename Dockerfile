@@ -24,4 +24,4 @@ COPY --from=build /app/src/main/resources/application.properties .
 EXPOSE 8080
 
 # Define el comando de inicio de la aplicación
-CMD ["java", "-jar", "RenderGitHub-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-jar", "SpringExercise2-0.0.1-SNAPSHOT.jar"]

@@ -1,6 +1,10 @@
 package com.example.SpringExercise2.controladores.autorizaciones;
 
-import java.util.Date;
+import ch.qos.logback.core.subst.Token;
 
-public record TokenDto(String token, Date expirationDate) {
+public record TokenDto(String token, java.util.Date expirationDate) {
+
+    public static String getToken(String Token) {
+        return Token;
+    }
 }

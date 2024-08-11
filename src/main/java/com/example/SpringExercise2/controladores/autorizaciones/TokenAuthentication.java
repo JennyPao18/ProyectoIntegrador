@@ -45,6 +45,5 @@ public class TokenAuthentication
                 .collect(Collectors.toList());
     }
 
-
 }
 

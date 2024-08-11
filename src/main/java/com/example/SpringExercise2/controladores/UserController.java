@@ -5,6 +5,7 @@ import com.example.SpringExercise2.data.usuarios.UserEntity;
 import com.example.SpringExercise2.data.usuarios.UserService;
 import com.example.SpringExercise2.excepciones.UserWithEmailAlreadyRegisteredException;
 import jakarta.annotation.security.RolesAllowed;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -43,17 +44,21 @@ public class UserController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PostMapping
+
+    @PostMapping("/users")
     public ResponseEntity<UserEntity> createUser(@RequestBody UserDto userDto) {
         if (userService.buscarPorCorreo(userDto.getEmail()).isPresent()) {
+            System.out.println("Correo ya registrado"); // Añade un log para verificar
             throw new UserWithEmailAlreadyRegisteredException("Ese correo electrónico ya está en uso");
         }
 
-        UserEntity userEntity = new UserEntity(userDto.getNombre(), userDto.getEmail(), passwordEncoder.encode(userDto.getContraseña()));
-        UserEntity savedUser = userService.crearUsuario(userEntity);
-
-        return ResponseEntity.ok(savedUser);
+        String encodedPassword = passwordEncoder.encode(userDto.getContraseña());
+        UserEntity userEntity = new UserEntity(userDto.getNombre(), userDto.getEmail(), encodedPassword);
+        UserEntity createdUser = userService.crearUsuario(userEntity);
+        return ResponseEntity.ok(createdUser);
     }
+
+
 
     @RolesAllowed(ADMIN_ROLE)
     @DeleteMapping("/{id}")

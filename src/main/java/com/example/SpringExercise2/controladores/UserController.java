@@ -45,7 +45,7 @@ public class UserController {
     }
 
 
-    @PostMapping("/users")
+    @PostMapping
     public ResponseEntity<UserEntity> createUser(@RequestBody UserDto userDto) {
         if (userService.buscarPorCorreo(userDto.getEmail()).isPresent()) {
             System.out.println("Correo ya registrado"); // Añade un log para verificar
